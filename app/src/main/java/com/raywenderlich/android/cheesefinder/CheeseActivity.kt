@@ -59,11 +59,14 @@ class CheeseActivity : BaseSearchActivity() {
         val searchTextObservable = createButtonClickObservable()
 
         searchTextObservable
+
             .subscribeOn(AndroidSchedulers.mainThread())
+            .doOnNext { showProgress() }
             .observeOn(Schedulers.io())
             .map { cheeseSearchEngine.search(it)!!}
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
+                hideProgress()
                 showResult(it)
             }
     }
