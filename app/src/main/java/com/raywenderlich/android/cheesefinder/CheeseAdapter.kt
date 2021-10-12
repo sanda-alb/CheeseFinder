@@ -40,12 +40,14 @@ import com.raywenderlich.android.cheesefinder.ui.CheckableImageView
 import io.reactivex.Maybe
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.list_item.view.*
 
 class CheeseAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
   var compositeDisposable = CompositeDisposable()
+
 
   var cheeses: List<Cheese> = listOf()
     set(value) {
