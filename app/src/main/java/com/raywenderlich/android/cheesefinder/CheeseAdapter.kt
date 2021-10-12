@@ -35,7 +35,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.raywenderlich.android.cheesefinder.database.Cheese
+import com.raywenderlich.android.cheesefinder.database.CheeseDatabase
+import com.raywenderlich.android.cheesefinder.ui.CheckableImageView
+import io.reactivex.Maybe
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.list_item.view.*
 
 class CheeseAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -60,6 +65,29 @@ class CheeseAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     holder.itemView.textView.text = cheese.name
     holder.itemView.imageFavorite.isChecked = cheese.favorite == 1
 
+    // Create the Maybe from an action.
+    Maybe.create<Boolean> { emitter ->
+      emitter.setCancellable {
+        holder.itemView.imageFavorite.setOnClickListener(null)
+      }
+
+      holder.itemView.imageFavorite.setOnClickListener {
+        emitter.onSuccess((it as CheckableImageView).isChecked) // Emit the checked state on success.
+      }
+    }.toFlowable().onBackpressureLatest() // Turn the Maybe into a flowable.
+      .observeOn(Schedulers.io())
+      .map { isChecked ->
+        cheese.favorite = if (!isChecked) 1 else 0
+        val database = CheeseDatabase.getInstance(holder.itemView.context).cheeseDao()
+        database.favoriteCheese(cheese) // Perform the update on the Cheeses table.
+        cheese.favorite // Return the result of the operation.
+      }
+      .subscribeOn(AndroidSchedulers.mainThread())
+      .subscribe {
+        holder.itemView.imageFavorite.isChecked = it == 1 // Use the result from the emission
+      // to change the outline to a filled in heart.
+      }
+
   }
 
   override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -67,5 +95,6 @@ class CheeseAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
   }
 
   class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+
 
 }
